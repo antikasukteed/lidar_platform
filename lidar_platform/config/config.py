@@ -39,7 +39,7 @@ if hostname == 'LIDAR-SERVER':
 else:
     QUERY_0 = {"standard": cc_std + ' -silent',
                "standard_view": cc_std,
-               "PoissonRecon": 'C:\opt\AdaptiveSolvers.x64\PoissonRecon.exe',
+               "PoissonRecon": 'C:/opt/AdaptiveSolvers.x64/PoissonRecon.exe',
                "cc_ple": 'C:/opt/CloudCompareProjects/CloudCompare/CloudCompare.exe -silent',
                "cc_ple_view": 'C:/opt/CloudCompareProjects/CloudCompare/CloudCompare.exe'
                }
