@@ -64,13 +64,12 @@ class LasData(laspy.LasData):  # subclass laspy.LasData
         super().__init__(las_data.header, las_data.points)
         self.filename = filename
         self.wdp = os.path.splitext(filename)[0] + '.wdp'
-        self.waveform_packets_descriptors = None
-        self.waveform_packets_descriptors = get_waveform_packet_descriptors(self)
+        self.waveform_packet_descriptors = get_waveform_packet_descriptors(self)
         self.file_version = f'{las_data.header.version[0]}.{las_data.header.version[1]}'
 
     def get_waveform(self, index, offset=0, make_positive=False):
 
-        wpd = self.waveform_packets_descriptors[self.wavepacket_index[index]]  # get the Waveform Packet Descriptor
+        wpd = self.waveform_packet_descriptors[self.wavepacket_index[index]]  # get the Wave Packet Descriptor
 
         if self.header.global_encoding.waveform_data_packets_internal:
             with open(self.filename, 'rb') as bf:
