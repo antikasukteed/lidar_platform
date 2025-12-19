@@ -297,7 +297,7 @@ class SbfData:
         self.config['SBF']['Points'] = str(self.xyz.shape[0])
 
 
-def read_sbf(filename, verbose=True):
+def read_sbf(filename, verbose=False):
     return SbfData(filename, verbose=verbose)
 
 
