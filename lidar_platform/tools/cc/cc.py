@@ -104,7 +104,7 @@ def move_cloud(cloud, odir):
 
 
 def merge(files, fmt='sbf',
-          silent=True, debug=False, global_shift='AUTO', cc=cc_exe):
+          silent=True, verbose=False, global_shift='AUTO', cc=cc_exe):
 
     if len(files) == 1 or files is None:
         print("[cc.merge] only one file in parameter 'files', this is quite unexpected!")
@@ -121,12 +121,39 @@ def merge(files, fmt='sbf',
     else:
         for file in files:
             cmd.open_file(file, global_shift=global_shift)
+
     cmd.append('-MERGE_CLOUDS')
 
-    misc.run(cmd, verbose=debug)
+    misc.run(cmd, verbose=verbose)
 
     root, ext = os.path.splitext(files[0])
     return root + f'_MERGED.{fmt.lower()}'
+
+
+def store_in_bin(files, silent=True, verbose=False, global_shift='AUTO', cc=cc_exe):
+    if len(files) == 1 or files is None:
+        print("[cc.merge] only one file in parameter 'files', this is quite unexpected!")
+        return None
+
+    cmd = CCCommand(cc, silent=silent, fmt='BIN', auto_save='on')
+    if global_shift == 'FIRST':
+        raise "'FIRST' is not a valid option, the default is 'AUTO' or pass a valid global shift 3-tuple"
+    elif global_shift =='AUTO':
+        print("[cc.merge] WARNING be careful when using 'AUTO' if the resulting shifted coordinates are still large")
+        cmd.open_file(files[0], global_shift='AUTO')
+        for file in files[1:]:
+            cmd.open_file(file, global_shift='FIRST')
+    else:
+        for file in files:
+            cmd.open_file(file, global_shift=global_shift)
+
+    head, tail = os.path.split(files[0])
+    out = os.path.join(head, 'AllClouds.bin')
+    cmd.extend(["-SAVE_CLOUDS", "ALL_AT_ONCE"])
+
+    misc.run(cmd, verbose=verbose)
+
+    return out
 
 
 def sf_interp_and_merge(src, dst, index, global_shift,
@@ -623,6 +650,38 @@ def to_sbf(fullname,
     return out
 
 
+def to_ply(fullname,
+           silent=True, verbose=False, global_shift='AUTO', cc_exe=cc_exe, fwf=False):
+
+    cmd = CCCommand(cc_exe, silent=silent, fmt='PLY')
+    cmd.open_file(fullname, global_shift=global_shift, fwf=fwf)
+
+    root, ext = os.path.splitext(fullname)
+    if ext == '.ply':  # nothing to do, simply return the name
+        out = fullname
+    else:
+        cmd.append('-SAVE_CLOUDS')
+        misc.run(cmd, verbose=verbose)
+        out = os.path.splitext(fullname)[0] + '.ply'
+    return out
+
+
+def to_pcd(fullname,
+           silent=True, verbose=False, global_shift='AUTO', cc_exe=cc_exe, fwf=False):
+
+    cmd = CCCommand(cc_exe, silent=silent, fmt='PCD')
+    cmd.open_file(fullname, global_shift=global_shift, fwf=fwf)
+
+    root, ext = os.path.splitext(fullname)
+    if ext == '.pcd':  # nothing to do, simply return the name
+        out = fullname
+    else:
+        cmd.append('-SAVE_CLOUDS')
+        misc.run(cmd, verbose=verbose)
+        out = os.path.splitext(fullname)[0] + '.pcd'
+    return out
+
+
 ##############
 #  SUBSAMPLING
 ##############
@@ -727,7 +786,8 @@ def apply_transformation(cloudfile, transformation, fmt='SBF',
     :return:
     """
 
-    print(f'[cc.apply_transformation] apply transformation to {cloudfile}')
+    if debug:
+        print(f'[cc.apply_transformation] apply transformation to {cloudfile}')
     if not os.path.exists(cloudfile):
         raise FileNotFoundError
 

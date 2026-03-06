@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def shift_array(array, shift, config=None, debug=False):
-    newArray = array.astype(float)
+    newArray = array.astype(np.float64)
     # apply the shift read in the SBF file
     newArray += np.array(shift).reshape(1, -1)
     # apply GlobalShift if any
@@ -101,9 +101,9 @@ def write_sbf(sbf, xyz,
     # compute sbf internal shift
     shift = np.mean(xyz_orig, axis=0).astype(float)
     # build the array that will effectively be stored (32 bits float)
-    a = np.zeros((Points, SFCount + 3)).astype('>f')
+    a = np.zeros((Points, SFCount + 3)).astype('>f4')  # big-endian float32
     # set xyz
-    a[:, :3] = (xyz_orig - shift).astype('>f')
+    a[:, :3] = (xyz_orig - shift).astype('>f4')  # big-endian float32
 
     # subtract shifts if any configured
     if SFCount != 0:
@@ -117,12 +117,12 @@ def write_sbf(sbf, xyz,
                         print(f'[read_sbf] subtract shift from scalar field SF{i_sf} for storage: {sf_shift}')
                     shifted_sf[:, k] -= sf_shift
         # set scalar fields
-        a[:, 3:] = shifted_sf.astype('>f')
+        a[:, 3:] = shifted_sf.astype('>f4')
 
     if add_index is True:
-        b = np.zeros((Points, SFCount + 1)).astype('>f')
+        b = np.zeros((Points, SFCount + 1)).astype('>f4')
         b[:, :-1] = a
-        b[:, -1] = np.arange(Points).astype('>f')
+        b[:, -1] = np.arange(Points).astype('>f4')
         a = b
 
     # write .sbf.data
@@ -209,7 +209,7 @@ class SbfData:
                 print(f'shift ({x_shift, y_shift, z_shift})')
                 print(bytes_[37:])
                 print(len(bytes_[37:]))
-            array = np.fromfile(f, dtype='>f').reshape(Np, Ns + 3).astype(float)
+            array = np.fromfile(f, dtype='>f4').reshape(Np, Ns + 3).astype(np.float64)
             shift = np.array((x_shift, y_shift, z_shift)).reshape(1, 3)
 
         self.Np = Np
@@ -223,7 +223,8 @@ class SbfData:
                 for item in config['SBF'][f'SF{k}'].split(','):
                     if 's=' in item:  # apply offset if any
                         shift = float(item.replace('"', '').split('s=')[1])
-                        print(f'[read_sbf] add shift to scalar field SF{k}: {shift}')
+                        if verbose is True:
+                            print(f'[read_sbf] add shift to scalar field SF{k}: {shift}')
                         array[:, 2 + k] += shift
             sf = array[:, 3:]
         else:
